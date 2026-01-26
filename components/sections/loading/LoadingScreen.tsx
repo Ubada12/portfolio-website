@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useCallback, memo, useMemo } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, delay } from "framer-motion"
 
 const LOADING_PHRASES = [
   { text: "npm install awesomeness", prefix: "$" },
@@ -20,11 +20,15 @@ const LOADING_PHRASES = [
 ] as const
 
 const BOOT_SEQUENCE = [
-  { text: "BIOS v2.0.25 initialized", delay: 0 },
-  { text: "Memory check: 32GB OK", delay: 100 },
-  { text: "Loading kernel modules...", delay: 100 },
-  { text: "Starting portfolio services", delay: 100 },
+  { text: "Booting JD-OS v2.0.25", type: "info", delay: 400 },
+  { text: "Checking system memory", type: "process", delay: 600 },
+  { text: "32GB DDR5 detected", type: "success", delay: 300 },
+  { text: "Mounting virtual filesystem", type: "process", delay: 500 },
+  { text: "Initializing rendering engine", type: "process", delay: 700 },
+  { text: "GPU acceleration enabled", type: "success", delay: 300 },
+  { text: "Portfolio services online", type: "success", delay: 400 },
 ] as const
+
 
 const CODE_CHARS = "01アイウエオカキクケコサシスセソタチツテト</>{}[];=+-*&|!?"
 
@@ -186,15 +190,61 @@ const HexGrid = memo(function HexGrid() {
   )
 })
 
-const ScanningLine = memo(function ScanningLine() {
+const TerminalScanner = memo(function TerminalScanner() {
   return (
     <motion.div
-      animate={{ top: ["0%", "100%", "0%"] }}
-      transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-      className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent shadow-[0_0_20px_hsl(var(--primary)),0_0_40px_hsl(var(--primary)/0.5)]"
-    />
+      initial={{ top: "-10%" }}
+      animate={{ top: "110%" }}
+      transition={{
+        duration: 4,
+        repeat: Infinity,
+        ease: "linear",
+      }}
+      className="
+        pointer-events-none
+        absolute left-0 right-0
+        h-[2px]
+        z-10
+      "
+    >
+      {/* Core scan line */}
+      <div
+        className="
+          h-full w-full
+          bg-gradient-to-r
+          from-transparent
+          via-primary/70
+          to-transparent
+        "
+      />
+
+      {/* Glow trail */}
+      <div
+        className="
+          absolute inset-0
+          blur-md
+          bg-gradient-to-r
+          from-transparent
+          via-primary/40
+          to-transparent
+        "
+      />
+
+      {/* Dark-mode depth */}
+      <div
+        className="
+          absolute inset-0
+          opacity-0 dark:opacity-100
+          blur-xl
+          bg-primary/30
+        "
+      />
+    </motion.div>
   )
 })
+
+
+
 
 interface LoadingScreenProps {
   onLoadingComplete: () => void
@@ -206,6 +256,8 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
   const [bootStep, setBootStep] = useState(0)
   const [showMainContent, setShowMainContent] = useState(false)
   const [typedText, setTypedText] = useState("")
+  const [bootComplete, setBootComplete] = useState(false)
+
 
   const handleSkip = useCallback(() => {
     setProgress(100)
@@ -223,13 +275,25 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
   useEffect(() => {
     if (bootStep < BOOT_SEQUENCE.length) {
       const timer = setTimeout(() => {
-        setBootStep((prev) => prev + 1)
-      }, BOOT_SEQUENCE[bootStep].delay + 150)
+        setBootStep(prev => prev + 1)
+      }, BOOT_SEQUENCE[bootStep].delay)
+
       return () => clearTimeout(timer)
-    } else {
-      setShowMainContent(true)
     }
+
+    // 🔥 BOOT COMPLETED
+    setTimeout(() => {
+      setBootComplete(true)
+    }, 1000)
+
+    // 👇 IMPORTANT: delay BEFORE switching screens
+    const finalize = setTimeout(() => {
+      setShowMainContent(true)
+    }, 2000) // human pause after last OK
+
+    return () => clearTimeout(finalize)
   }, [bootStep])
+
 
   useEffect(() => {
     if (!showMainContent) return
@@ -241,7 +305,8 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
           setTimeout(onLoadingComplete, 200)
           return 100
         }
-        return prev + 3
+        return prev + Math.max(1, Math.round((100 - prev) / 12))
+
       })
     }, 25)
 
@@ -262,7 +327,7 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
     if (typedText.length < currentPhrase.length) {
       const timer = setTimeout(() => {
         setTypedText(currentPhrase.slice(0, typedText.length + 1))
-      }, 30)
+      }, typedText.length % 6 === 0 ? 120 : 35)
       return () => clearTimeout(timer)
     }
   }, [typedText, phraseIndex, showMainContent])
@@ -277,6 +342,19 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
     []
   )
 
+  const STATUS_LABEL = {
+    info: "[INFO]",
+    process: "[....]",
+    success: "[OK]",
+  } as const
+
+  const STATUS_COLOR = {
+    info: "text-primary",
+    process: "text-yellow-500",
+    success: "text-emerald-500",
+  } as const
+
+
   return (
     <motion.div
       initial={{ opacity: 1 }}
@@ -285,7 +363,8 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-background"
     >
       <HexGrid />
-      <ScanningLine />
+      <TerminalScanner />
+
 
       <div className="absolute inset-0 overflow-hidden pointer-events-none">{codeRainDrops}</div>
 
@@ -311,10 +390,48 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.4 }}
-            className="relative z-10 w-full max-w-md px-4 sm:px-6"
+            className="
+              relative z-10
+              w-full
+              max-w-md sm:max-w-lg lg:max-w-xl
+              px-4 sm:px-6
+            "
+
           >
             {/* Terminal card with enhanced styling */}
-            <div className="relative overflow-hidden rounded-2xl border border-primary/20 dark:border-primary/30 bg-card/80 dark:bg-[#0a0f1a]/90 backdrop-blur-xl shadow-2xl shadow-black/10 dark:shadow-primary/10 p-4 sm:p-6 font-mono text-xs sm:text-sm">
+            <motion.div
+              initial={false}
+              animate={
+                bootComplete
+                  ? {
+                      rotateX: [0, 8, -4, 0],
+                      y: [0, 6, -2, 0],
+                      scale: [1, 1.01, 1],
+                    }
+                  : {}
+              }
+              transition={{
+                duration: 0.9,
+                ease: "easeOut",
+                times: [0, 0.4, 0.7, 1],
+              }}
+              style={{
+                transformOrigin: "top center",
+                perspective: 1200,
+              }}
+              className="relative overflow-hidden rounded-2xl border border-primary/20 dark:border-primary/30 bg-card/80 dark:bg-[#0a0f1a]/90 backdrop-blur-xl shadow-2xl shadow-black/10 dark:shadow-primary/10 p-5 sm:p-6 lg:p-7 font-mono text-xs sm:text-sm"
+            >
+
+              {/* 🔥 MICRO FLASH – ADD THIS BLOCK */}
+              {bootComplete && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 0.15, 0] }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="absolute inset-0 z-20 bg-white dark:bg-primary pointer-events-none"
+                />
+              )}
+
               {/* Glowing border effect */}
               <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-primary/10 dark:ring-primary/20" />
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
@@ -322,36 +439,114 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
               {/* Inner glow for dark mode */}
               <div className="absolute inset-0 rounded-2xl opacity-0 dark:opacity-100 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
 
-              <div className="relative z-10 mb-4 flex items-center gap-2">
-                <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
-                <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]" />
-                <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                <span className="ml-2 text-[10px] sm:text-xs text-muted-foreground tracking-wide">system_boot.sh</span>
+              <div className="relative z-10 mb-4 flex items-center justify-between">
+                {/* LEFT — Traffic lights */}
+                <div className="flex items-center gap-2">
+                  {[
+                    { color: "bg-red-500", glow: "shadow-red-500/60" },
+                    { color: "bg-yellow-500", glow: "shadow-yellow-500/60" },
+                    { color: "bg-green-500", glow: "shadow-green-500/60" },
+                  ].map((dot, i) => (
+                    <motion.div
+                      key={i}
+                      whileHover={{ scale: 1.15 }}
+                      className={`
+                        h-2.5 w-2.5 sm:h-3 sm:w-3
+                        rounded-full
+                        ${dot.color}
+                        shadow-[0_0_6px]
+                        ${dot.glow}
+                      `}
+                    />
+                  ))}
+
+                  {/* Terminal title */}
+                  <div
+                    className="
+                      ml-2 flex items-center gap-2
+                      rounded-md px-2 py-0.5
+                      bg-muted/40 dark:bg-muted/30
+                      border border-border/40
+                      backdrop-blur
+                    "
+                  >
+                    <span className="text-[10px] sm:text-xs font-mono text-muted-foreground">
+                      system_boot.sh
+                    </span>
+
+                    {/* subtle scan shimmer */}
+                    <motion.span
+                      animate={{ opacity: [0.4, 0.8, 0.4] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      className="h-1 w-1 rounded-full bg-primary shadow-[0_0_6px_hsl(var(--primary))]"
+                    />
+                  </div>
+                </div>
+
+                {/* RIGHT — Status */}
+                <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-mono">
+                  <motion.span
+                    animate={{
+                      opacity: [0.4, 1, 0.4],
+                      boxShadow: [
+                        "0 0 4px hsl(var(--primary))",
+                        "0 0 10px hsl(var(--primary))",
+                        "0 0 4px hsl(var(--primary))",
+                      ],
+                    }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="h-1.5 w-1.5 rounded-full bg-primary"
+                  />
+                  <span className="tracking-wide text-muted-foreground">READY</span>
+                </div>
               </div>
 
-              <div className="relative z-10 space-y-2">
+
+              <div className="relative z-10 space-y-3 sm:space-y-3.5">
+
                 {BOOT_SEQUENCE.slice(0, bootStep).map((line, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, x: -5 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex items-center gap-2"
+                    transition={{
+                      duration: 0.3,
+                      delay: i * 0.06,
+                      ease: "easeOut",
+                    }}
+                    className="flex items-center gap-2 py-0.5"
+
                   >
-                    <span className="text-emerald-500 dark:text-emerald-400 font-semibold drop-shadow-[0_0_6px_rgba(16,185,129,0.5)]">[OK]</span>
-                    <span className="text-foreground/80">{line.text}</span>
+                    <span
+                      className={`
+                        font-semibold font-mono
+                        ${STATUS_COLOR[line.type]}
+                        drop-shadow-[0_0_6px_currentColor]
+                      `}
+                    >
+                      {STATUS_LABEL[line.type]}
+                    </span>
+                    <span className="text-foreground/80">
+                      {line.type === "process" ? `${line.text}…` : line.text}
+                    </span>
+
                   </motion.div>
                 ))}
 
                 {bootStep < BOOT_SEQUENCE.length && (
                   <motion.span
                     animate={{ opacity: [1, 0] }}
-                    transition={{ duration: 0.5, repeat: Infinity }}
-                    className="inline-block h-4 w-0.5 bg-primary rounded-full shadow-[0_0_10px_hsl(var(--primary))]"
+                    transition={{
+                      duration: 0.9,
+                      repeat: Infinity,
+                      repeatType: "reverse",
+                    }}
+                    className="inline-block h-4 w-0.5 bg-primary rounded-full
+                              shadow-[0_0_10px_hsl(var(--primary))]"
                   />
                 )}
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         ) : (
           <motion.div
