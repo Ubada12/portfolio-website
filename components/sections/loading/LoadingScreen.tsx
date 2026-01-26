@@ -13,7 +13,6 @@ import { motion, AnimatePresence, delay } from "framer-motion"
 const LOADING_PHRASES = [
   { text: "npm install awesomeness", prefix: "$" },
   { text: "Compiling components...", prefix: ">" },
-  { text: "Building optimized bundle", prefix: ">" },
   { text: "Initializing creative engine", prefix: ">" },
   { text: "Loading developer superpowers", prefix: "$" },
   { text: "Ready to deploy magic", prefix: "$" },
@@ -117,49 +116,6 @@ const FloatingParticle = memo(function FloatingParticle({ index }: { index: numb
         ease: "easeInOut",
       }}
     />
-  )
-})
-
-const CircularProgress = memo(function CircularProgress({ progress }: { progress: number }) {
-  const radius = 85
-  const stroke = 3
-  const normalizedRadius = radius - stroke * 2
-  const circumference = normalizedRadius * 2 * Math.PI
-  const strokeDashoffset = circumference - (progress / 100) * circumference
-
-  return (
-    <svg height={radius * 2} width={radius * 2} className="absolute -rotate-90">
-      <circle
-        stroke="currentColor"
-        fill="transparent"
-        strokeWidth={stroke}
-        r={normalizedRadius}
-        cx={radius}
-        cy={radius}
-        className="text-primary/10 dark:text-primary/20"
-      />
-      <motion.circle
-        stroke="url(#progressGradient)"
-        fill="transparent"
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        r={normalizedRadius}
-        cx={radius}
-        cy={radius}
-        style={{ strokeDasharray: circumference, strokeDashoffset }}
-        initial={{ strokeDashoffset: circumference }}
-        animate={{ strokeDashoffset }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="drop-shadow-[0_0_10px_hsl(var(--primary))]"
-      />
-      <defs>
-        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="hsl(var(--primary))" />
-          <stop offset="50%" stopColor="hsl(var(--accent))" />
-          <stop offset="100%" stopColor="hsl(var(--primary))" />
-        </linearGradient>
-      </defs>
-    </svg>
   )
 })
 
@@ -305,7 +261,19 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
           setTimeout(onLoadingComplete, 200)
           return 100
         }
-        return prev + Math.max(1, Math.round((100 - prev) / 12))
+        let increment = 0
+
+        if (prev < 30) increment = 0.6        // boot phase
+        else if (prev < 85) increment = 0.25  // real work
+        else increment = 0.08                 // finalization
+
+        if (prev > 40 && prev < 70 && Math.random() < 0.08) {
+          return prev // micro stall
+        }
+
+
+        return Math.min(prev + increment, 100)
+
 
       })
     }, 25)
@@ -353,6 +321,14 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
     process: "text-yellow-500",
     success: "text-emerald-500",
   } as const
+
+  // 🔋 System energy (0 → 1)
+const systemEnergy = useMemo(() => {
+  if (progress < 30) return 1       // boot turbulence
+  if (progress < 70) return 0.6     // stable processing
+  return 0.3                        // finalization
+}, [progress])
+
 
 
   return (
@@ -556,9 +532,34 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
             transition={{ duration: 0.5, type: "spring", stiffness: 200, damping: 20 }}
             className="relative z-10 flex flex-col items-center px-4 sm:px-6"
           >
+
+            {progress > 92 && (
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1.2, opacity: [0.4, 0] }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="absolute inset-0 rounded-full bg-primary blur-xl"
+              />
+            )}
+
+
+            {/* SYSTEM HANDOVER PULSE */}
+            <motion.div
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: [0.6, 1.6], opacity: [0.35, 0] }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+              className="
+                absolute
+                inset-0
+                rounded-full
+                bg-primary/20
+                blur-3xl
+                pointer-events-none
+              "
+            />
+
             {/* Logo with circular progress - enhanced */}
             <div className="relative mb-6 sm:mb-8">
-              <CircularProgress progress={progress} />
 
               <motion.div
                 initial={{ scale: 0, rotate: -180 }}
@@ -568,10 +569,18 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
               >
                 {/* Pulsing glow behind logo */}
                 <motion.div
-                  animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  animate={{
+                    scale: [1, 1 + 0.4 * systemEnergy, 1],
+                    opacity: [0.2, 0.5 * systemEnergy, 0.2],
+                  }}
+                  transition={{
+                    duration: 2.5 / systemEnergy,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
                   className="absolute inset-8 rounded-2xl bg-primary/30 blur-2xl"
                 />
+
 
                 {/* Logo container with rotating border */}
                 <div className="relative flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-2xl border border-primary/30 dark:border-primary/40 bg-card/90 dark:bg-[#0a0f1a]/90 backdrop-blur-xl shadow-2xl shadow-primary/10">
@@ -579,7 +588,7 @@ function LoadingScreenComponent({ onLoadingComplete }: LoadingScreenProps) {
                   <div className="absolute -inset-[1px] overflow-hidden rounded-2xl">
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                      transition={{ duration: 6 / systemEnergy, repeat: Infinity, ease: "linear" }}
                       className="absolute inset-0"
                       style={{
                         background: "conic-gradient(from 0deg, transparent 0%, hsl(var(--primary)) 25%, transparent 50%, hsl(var(--accent)) 75%, transparent 100%)",
