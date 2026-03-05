@@ -1,0 +1,3143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🐐 Goat Detection & Counting System — Technical Documentation</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0e0c;
+        --bg2: #0f1510;
+        --bg3: #141c16;
+        --surface: #1a241c;
+        --surface2: #212e23;
+        --border: #2a3d2c;
+        --green: #3dff7a;
+        --green2: #26cc5c;
+        --green3: #1a8c3e;
+        --amber: #ffb800;
+        --amber2: #cc8f00;
+        --red: #ff4444;
+        --blue: #4488ff;
+        --cyan: #00e5ff;
+        --text: #e8f0e9;
+        --text2: #a0b5a2;
+        --text3: #6a7f6c;
+        --code-bg: #0d160f;
+        --code-border: #1e3020;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.7;
+        overflow-x: hidden;
+      }
+
+      /* ── NOISE OVERLAY ── */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.4;
+      }
+
+      /* ── HERO ── */
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        padding: 80px 60px;
+        overflow: hidden;
+      }
+
+      .hero-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(var(--border) 1px, transparent 1px),
+          linear-gradient(90deg, var(--border) 1px, transparent 1px);
+        background-size: 60px 60px;
+        opacity: 0.3;
+        animation: gridPulse 8s ease-in-out infinite;
+      }
+
+      @keyframes gridPulse {
+        0%,
+        100% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 0.15;
+        }
+      }
+
+      .hero-glow {
+        position: absolute;
+        width: 700px;
+        height: 700px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(61, 255, 122, 0.08) 0%,
+          transparent 70%
+        );
+        top: -200px;
+        right: -200px;
+        animation: glowDrift 12s ease-in-out infinite;
+      }
+
+      .hero-glow2 {
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(255, 184, 0, 0.05) 0%,
+          transparent 70%
+        );
+        bottom: -150px;
+        left: -100px;
+        animation: glowDrift2 15s ease-in-out infinite;
+      }
+
+      @keyframes glowDrift {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        50% {
+          transform: translate(-40px, 40px);
+        }
+      }
+
+      @keyframes glowDrift2 {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        50% {
+          transform: translate(30px, -30px);
+        }
+      }
+
+      .hero-content {
+        position: relative;
+        z-index: 1;
+        max-width: 900px;
+      }
+
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(61, 255, 122, 0.08);
+        border: 1px solid rgba(61, 255, 122, 0.2);
+        border-radius: 4px;
+        padding: 6px 14px;
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        color: var(--green);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 32px;
+        animation: fadeUp 0.8s ease both;
+      }
+
+      .hero-badge::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--green);
+        animation: blink 1.5s ease-in-out infinite;
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.2;
+        }
+      }
+
+      h1.hero-title {
+        font-family: "Syne", sans-serif;
+        font-size: clamp(48px, 7vw, 96px);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.03em;
+        margin-bottom: 8px;
+        animation: fadeUp 0.8s 0.1s ease both;
+      }
+
+      .hero-title .accent {
+        color: var(--green);
+      }
+      .hero-title .dim {
+        color: var(--text3);
+      }
+
+      .hero-subtitle {
+        font-family: "Syne", sans-serif;
+        font-size: clamp(20px, 3vw, 32px);
+        font-weight: 600;
+        color: var(--text2);
+        margin-bottom: 28px;
+        animation: fadeUp 0.8s 0.2s ease both;
+      }
+
+      .hero-desc {
+        font-size: 17px;
+        color: var(--text2);
+        max-width: 640px;
+        margin-bottom: 48px;
+        animation: fadeUp 0.8s 0.3s ease both;
+        line-height: 1.8;
+      }
+
+      .hero-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 56px;
+        animation: fadeUp 0.8s 0.4s ease both;
+      }
+
+      .tag {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 5px 12px;
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        color: var(--text3);
+        letter-spacing: 0.06em;
+      }
+
+      .tag.green {
+        border-color: rgba(61, 255, 122, 0.3);
+        color: var(--green);
+        background: rgba(61, 255, 122, 0.05);
+      }
+      .tag.amber {
+        border-color: rgba(255, 184, 0, 0.3);
+        color: var(--amber);
+        background: rgba(255, 184, 0, 0.05);
+      }
+      .tag.blue {
+        border-color: rgba(68, 136, 255, 0.3);
+        color: var(--blue);
+        background: rgba(68, 136, 255, 0.05);
+      }
+      .tag.cyan {
+        border-color: rgba(0, 229, 255, 0.3);
+        color: var(--cyan);
+        background: rgba(0, 229, 255, 0.05);
+      }
+
+      .hero-stats {
+        display: flex;
+        gap: 48px;
+        animation: fadeUp 0.8s 0.5s ease both;
+      }
+
+      .stat {
+        text-align: left;
+      }
+      .stat-val {
+        font-family: "Syne", sans-serif;
+        font-size: 36px;
+        font-weight: 800;
+        color: var(--green);
+        line-height: 1;
+        margin-bottom: 4px;
+      }
+      .stat-label {
+        font-size: 12px;
+        color: var(--text3);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ── NAV ── */
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 260px;
+        background: var(--bg2);
+        border-right: 1px solid var(--border);
+        padding: 32px 0;
+        overflow-y: auto;
+        z-index: 100;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+      }
+
+      .sidebar-logo {
+        padding: 0 24px 24px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 20px;
+      }
+
+      .sidebar-logo .logo-text {
+        font-family: "Syne", sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: 0.02em;
+      }
+
+      .sidebar-logo .logo-sub {
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        color: var(--text3);
+        margin-top: 2px;
+      }
+
+      .nav-section {
+        padding: 0 12px;
+        margin-bottom: 8px;
+      }
+
+      .nav-section-title {
+        font-family: "Space Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--text3);
+        padding: 8px 12px 4px;
+      }
+
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        color: var(--text2);
+        text-decoration: none;
+        transition: all 0.15s;
+        border: 1px solid transparent;
+      }
+
+      .nav-link:hover {
+        background: var(--surface);
+        color: var(--text);
+        border-color: var(--border);
+      }
+
+      .nav-link.active {
+        background: rgba(61, 255, 122, 0.08);
+        color: var(--green);
+        border-color: rgba(61, 255, 122, 0.2);
+      }
+
+      .nav-icon {
+        font-size: 14px;
+        width: 18px;
+        text-align: center;
+      }
+
+      /* ── MAIN CONTENT ── */
+      .main {
+        margin-left: 260px;
+        min-height: 100vh;
+      }
+
+      .section {
+        padding: 80px 60px;
+        border-bottom: 1px solid var(--border);
+        max-width: 1100px;
+      }
+
+      .section:last-child {
+        border-bottom: none;
+      }
+
+      .section-eyebrow {
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--green);
+        margin-bottom: 12px;
+      }
+
+      h2.section-title {
+        font-family: "Syne", sans-serif;
+        font-size: clamp(28px, 4vw, 44px);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 16px;
+        line-height: 1.1;
+      }
+
+      .section-intro {
+        font-size: 16px;
+        color: var(--text2);
+        max-width: 680px;
+        margin-bottom: 48px;
+        line-height: 1.8;
+      }
+
+      h3 {
+        font-family: "Syne", sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        margin-top: 40px;
+        color: var(--text);
+      }
+
+      h4 {
+        font-family: "Syne", sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text2);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      p {
+        color: var(--text2);
+        margin-bottom: 16px;
+        line-height: 1.8;
+      }
+
+      /* ── CARDS ── */
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+      }
+
+      .card-grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .card-grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        transition:
+          border-color 0.2s,
+          transform 0.2s;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--green),
+          transparent
+        );
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .card:hover {
+        border-color: var(--green3);
+        transform: translateY(-2px);
+      }
+      .card:hover::before {
+        opacity: 1;
+      }
+
+      .card-icon {
+        font-size: 28px;
+        margin-bottom: 16px;
+        display: block;
+      }
+
+      .card-title {
+        font-family: "Syne", sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 8px;
+      }
+
+      .card-desc {
+        font-size: 13px;
+        color: var(--text2);
+        line-height: 1.7;
+        margin: 0;
+      }
+
+      .card.highlight {
+        border-color: rgba(61, 255, 122, 0.3);
+        background: rgba(61, 255, 122, 0.04);
+      }
+
+      /* ── CODE ── */
+      pre,
+      code {
+        font-family: "Space Mono", monospace;
+      }
+
+      pre {
+        background: var(--code-bg);
+        border: 1px solid var(--code-border);
+        border-radius: 10px;
+        padding: 24px;
+        overflow-x: auto;
+        margin: 20px 0;
+        font-size: 13px;
+        line-height: 1.7;
+        position: relative;
+      }
+
+      pre .comment {
+        color: var(--text3);
+      }
+      pre .key {
+        color: var(--amber);
+      }
+      pre .val {
+        color: var(--green);
+      }
+      pre .str {
+        color: var(--cyan);
+      }
+      pre .num {
+        color: #ff9966;
+      }
+      pre .kw {
+        color: #cc88ff;
+      }
+
+      code {
+        background: var(--code-bg);
+        border: 1px solid var(--code-border);
+        border-radius: 4px;
+        padding: 2px 7px;
+        font-size: 12px;
+        color: var(--green);
+      }
+
+      /* ── PIPELINE DIAGRAM ── */
+      .pipeline {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+        margin: 32px 0;
+        overflow-x: auto;
+        padding-bottom: 8px;
+      }
+
+      .pipeline-step {
+        flex: 1;
+        min-width: 120px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        padding: 20px 16px;
+        text-align: center;
+        position: relative;
+        transition: all 0.2s;
+      }
+
+      .pipeline-step:not(:last-child)::after {
+        content: "→";
+        position: absolute;
+        right: -14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--green);
+        font-size: 20px;
+        z-index: 2;
+        background: var(--bg);
+        width: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .pipeline-step:first-child {
+        border-radius: 10px 0 0 10px;
+      }
+      .pipeline-step:last-child {
+        border-radius: 0 10px 10px 0;
+      }
+
+      .pipeline-step:hover {
+        background: var(--surface2);
+        border-color: var(--green3);
+        z-index: 1;
+      }
+
+      .pipeline-num {
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        color: var(--text3);
+        margin-bottom: 8px;
+      }
+
+      .pipeline-icon {
+        font-size: 24px;
+        margin-bottom: 8px;
+        display: block;
+      }
+
+      .pipeline-label {
+        font-family: "Syne", sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+
+      .pipeline-sub {
+        font-size: 10px;
+        color: var(--text3);
+        line-height: 1.4;
+      }
+
+      /* ── ARCHITECTURE TREE ── */
+      .arch-tree {
+        background: var(--code-bg);
+        border: 1px solid var(--code-border);
+        border-radius: 10px;
+        padding: 28px;
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        line-height: 2;
+        overflow-x: auto;
+      }
+
+      .tree-dir {
+        color: var(--amber);
+        font-weight: 700;
+      }
+      .tree-file {
+        color: var(--text2);
+      }
+      .tree-desc {
+        color: var(--text3);
+      }
+      .tree-highlight {
+        color: var(--green);
+      }
+      .tree-branch {
+        color: var(--border);
+      }
+
+      /* ── DATA FLOW DIAGRAM ── */
+      .dataflow {
+        position: relative;
+        padding: 40px 0;
+      }
+
+      .flow-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+
+      .flow-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 20px;
+        font-size: 13px;
+        font-family: "Syne", sans-serif;
+        font-weight: 600;
+        white-space: nowrap;
+        min-width: 140px;
+        text-align: center;
+        transition: all 0.2s;
+      }
+
+      .flow-box.source {
+        border-color: var(--amber2);
+        color: var(--amber);
+        background: rgba(255, 184, 0, 0.06);
+      }
+      .flow-box.process {
+        border-color: var(--green3);
+        color: var(--green);
+        background: rgba(61, 255, 122, 0.06);
+      }
+      .flow-box.output {
+        border-color: rgba(68, 136, 255, 0.4);
+        color: var(--blue);
+        background: rgba(68, 136, 255, 0.06);
+      }
+      .flow-box.decision {
+        border-color: rgba(0, 229, 255, 0.4);
+        color: var(--cyan);
+        background: rgba(0, 229, 255, 0.06);
+        border-style: dashed;
+      }
+      .flow-box.api {
+        border-color: rgba(204, 136, 255, 0.4);
+        color: #cc88ff;
+        background: rgba(204, 136, 255, 0.06);
+      }
+
+      .flow-arrow {
+        color: var(--text3);
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+
+      .flow-label {
+        font-size: 11px;
+        color: var(--text3);
+        font-family: "Space Mono", monospace;
+      }
+
+      /* ── THREAD DIAGRAM ── */
+      .thread-diagram {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 0;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        margin: 28px 0;
+      }
+
+      .thread-col {
+        padding: 24px 16px;
+        border-right: 1px solid var(--border);
+        position: relative;
+      }
+
+      .thread-col:last-child {
+        border-right: none;
+      }
+
+      .thread-header {
+        font-family: "Syne", sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .thread-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .thread-item {
+        background: var(--code-bg);
+        border: 1px solid var(--code-border);
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 11px;
+        color: var(--text2);
+        margin-bottom: 8px;
+        font-family: "Space Mono", monospace;
+      }
+
+      .thread-queue {
+        text-align: center;
+        padding: 8px;
+        background: rgba(61, 255, 122, 0.04);
+        border: 1px dashed rgba(61, 255, 122, 0.2);
+        border-radius: 6px;
+        font-size: 10px;
+        color: var(--green);
+        font-family: "Space Mono", monospace;
+        margin-bottom: 8px;
+      }
+
+      /* ── COUNTING DIAGRAM ── */
+      .counting-visual {
+        background: var(--code-bg);
+        border: 1px solid var(--code-border);
+        border-radius: 12px;
+        padding: 32px;
+        margin: 24px 0;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .cv-canvas {
+        width: 100%;
+        height: 180px;
+        position: relative;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 16px;
+      }
+
+      .cv-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--green);
+        box-shadow: 0 0 12px var(--green);
+      }
+
+      .cv-lineA {
+        left: 35%;
+        background: var(--amber);
+        box-shadow: 0 0 12px var(--amber);
+      }
+      .cv-lineB {
+        left: 65%;
+        background: var(--cyan);
+        box-shadow: 0 0 12px var(--cyan);
+      }
+
+      .cv-goat {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 28px;
+        animation: goatMove 4s ease-in-out infinite;
+      }
+
+      @keyframes goatMove {
+        0% {
+          left: 8%;
+        }
+        50% {
+          left: 85%;
+        }
+        100% {
+          left: 8%;
+        }
+      }
+
+      .cv-label {
+        position: absolute;
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        bottom: 6px;
+      }
+
+      .cv-label.a {
+        left: 33%;
+        color: var(--amber);
+      }
+      .cv-label.b {
+        left: 63%;
+        color: var(--cyan);
+      }
+
+      .cv-direction {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 11px;
+        font-family: "Space Mono", monospace;
+        color: var(--text3);
+      }
+
+      .counting-modes {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin: 24px 0;
+      }
+
+      .mode-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px;
+        transition: all 0.2s;
+      }
+
+      .mode-card:hover {
+        border-color: var(--green3);
+      }
+
+      .mode-badge {
+        font-family: "Space Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 3px;
+        display: inline-block;
+        margin-bottom: 12px;
+      }
+
+      .mode-badge.line {
+        background: rgba(61, 255, 122, 0.12);
+        color: var(--green);
+        border: 1px solid rgba(61, 255, 122, 0.2);
+      }
+      .mode-badge.dual {
+        background: rgba(255, 184, 0, 0.12);
+        color: var(--amber);
+        border: 1px solid rgba(255, 184, 0, 0.2);
+      }
+      .mode-badge.zone {
+        background: rgba(68, 136, 255, 0.12);
+        color: var(--blue);
+        border: 1px solid rgba(68, 136, 255, 0.2);
+      }
+      .mode-badge.recommended {
+        background: rgba(255, 68, 68, 0.12);
+        color: var(--red);
+        border: 1px solid rgba(255, 68, 68, 0.2);
+        margin-left: 6px;
+      }
+
+      .mode-title {
+        font-family: "Syne", sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .mode-desc {
+        font-size: 12px;
+        color: var(--text2);
+        line-height: 1.6;
+        margin: 0;
+      }
+
+      /* ── TABLE ── */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 24px 0;
+        font-size: 13px;
+      }
+
+      th {
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text3);
+        text-align: left;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+      }
+
+      td {
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(42, 61, 44, 0.5);
+        color: var(--text2);
+        vertical-align: top;
+      }
+
+      tr:hover td {
+        background: rgba(61, 255, 122, 0.02);
+      }
+
+      td code {
+        font-size: 11px;
+      }
+
+      .td-key {
+        color: var(--amber);
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+      }
+      .td-type {
+        color: var(--cyan);
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+      }
+      .td-default {
+        color: var(--green);
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+      }
+      .td-req {
+        color: var(--red);
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      /* ── BADGE LABELS ── */
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-family: "Space Mono", monospace;
+        font-weight: 400;
+      }
+
+      .badge-green {
+        background: rgba(61, 255, 122, 0.12);
+        color: var(--green);
+      }
+      .badge-amber {
+        background: rgba(255, 184, 0, 0.12);
+        color: var(--amber);
+      }
+      .badge-red {
+        background: rgba(255, 68, 68, 0.12);
+        color: var(--red);
+      }
+      .badge-blue {
+        background: rgba(68, 136, 255, 0.12);
+        color: var(--blue);
+      }
+      .badge-cyan {
+        background: rgba(0, 229, 255, 0.12);
+        color: var(--cyan);
+      }
+
+      /* ── CALLOUT ── */
+      .callout {
+        border-left: 3px solid var(--green);
+        background: rgba(61, 255, 122, 0.04);
+        border-radius: 0 8px 8px 0;
+        padding: 16px 20px;
+        margin: 20px 0;
+        font-size: 14px;
+        color: var(--text2);
+      }
+
+      .callout.warn {
+        border-color: var(--amber);
+        background: rgba(255, 184, 0, 0.04);
+      }
+      .callout.info {
+        border-color: var(--blue);
+        background: rgba(68, 136, 255, 0.04);
+      }
+      .callout.danger {
+        border-color: var(--red);
+        background: rgba(255, 68, 68, 0.04);
+      }
+
+      .callout-title {
+        font-family: "Syne", sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--text);
+      }
+
+      /* ── FAQ ── */
+      .faq-item {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        margin-bottom: 12px;
+        overflow: hidden;
+      }
+
+      .faq-question {
+        padding: 18px 24px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: "Syne", sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+        transition: background 0.2s;
+        user-select: none;
+      }
+
+      .faq-question:hover {
+        background: var(--surface);
+      }
+
+      .faq-toggle {
+        color: var(--green);
+        font-size: 20px;
+        transition: transform 0.3s;
+        font-family: "Space Mono", monospace;
+      }
+
+      .faq-item.open .faq-toggle {
+        transform: rotate(45deg);
+      }
+
+      .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease;
+      }
+
+      .faq-item.open .faq-answer {
+        max-height: 600px;
+      }
+
+      .faq-answer-inner {
+        padding: 0 24px 20px;
+        font-size: 14px;
+        color: var(--text2);
+        line-height: 1.8;
+        border-top: 1px solid var(--border);
+        padding-top: 16px;
+      }
+
+      /* ── API ENDPOINTS ── */
+      .endpoint {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        margin-bottom: 16px;
+        overflow: hidden;
+      }
+
+      .endpoint-header {
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .method {
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 4px;
+        letter-spacing: 0.05em;
+      }
+
+      .method.get {
+        background: rgba(61, 255, 122, 0.15);
+        color: var(--green);
+      }
+      .method.post {
+        background: rgba(255, 184, 0, 0.15);
+        color: var(--amber);
+      }
+
+      .endpoint-path {
+        font-family: "Space Mono", monospace;
+        font-size: 13px;
+        color: var(--text);
+      }
+
+      .endpoint-desc {
+        font-size: 12px;
+        color: var(--text3);
+        margin-left: auto;
+      }
+
+      .endpoint-body {
+        padding: 16px 20px;
+      }
+
+      /* ── OUTPUTS ── */
+      .output-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin: 24px 0;
+      }
+
+      .output-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px;
+      }
+
+      .output-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .output-icon {
+        font-size: 20px;
+      }
+
+      .output-title {
+        font-family: "Syne", sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .output-file {
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        color: var(--amber);
+        margin-bottom: 8px;
+      }
+
+      .output-desc {
+        font-size: 12px;
+        color: var(--text2);
+        margin: 0;
+        line-height: 1.6;
+      }
+
+      /* ── DIVIDER ── */
+      .divider {
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--border),
+          transparent
+        );
+        margin: 32px 0;
+      }
+
+      /* ── CLIENT SECTION ── */
+      .client-highlight {
+        background: linear-gradient(
+          135deg,
+          rgba(61, 255, 122, 0.06) 0%,
+          rgba(0, 229, 255, 0.04) 100%
+        );
+        border: 1px solid rgba(61, 255, 122, 0.15);
+        border-radius: 16px;
+        padding: 40px;
+        margin: 32px 0;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .client-highlight::before {
+        content: '"';
+        position: absolute;
+        top: -20px;
+        left: 20px;
+        font-size: 200px;
+        color: rgba(61, 255, 122, 0.04);
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        line-height: 1;
+        pointer-events: none;
+      }
+
+      .client-highlight p {
+        font-size: 18px;
+        font-style: italic;
+        color: var(--text);
+        line-height: 1.7;
+        position: relative;
+        z-index: 1;
+      }
+
+      .value-prop {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin: 32px 0;
+      }
+
+      .vp-item {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .vp-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .vp-text h4 {
+        font-family: "Syne", sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 4px;
+        margin-top: 0;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+
+      .vp-text p {
+        font-size: 13px;
+        margin: 0;
+      }
+
+      /* ── FOOTER ── */
+      .footer {
+        padding: 48px 60px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .footer-brand {
+        font-family: "Syne", sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text2);
+      }
+
+      .footer-credit {
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        color: var(--text3);
+      }
+
+      /* ── SCROLLBAR ── */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--green3);
+      }
+
+      /* ── RESPONSIVE ── */
+      @media (max-width: 1024px) {
+        .sidebar {
+          display: none;
+        }
+        .main {
+          margin-left: 0;
+        }
+        .section {
+          padding: 60px 32px;
+        }
+        .hero {
+          padding: 60px 32px;
+        }
+        .card-grid-3,
+        .counting-modes {
+          grid-template-columns: 1fr 1fr;
+        }
+        .thread-diagram {
+          grid-template-columns: 1fr 1fr;
+        }
+        .value-prop {
+          grid-template-columns: 1fr;
+        }
+        .output-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .card-grid-3,
+        .counting-modes,
+        .card-grid-2 {
+          grid-template-columns: 1fr;
+        }
+        .hero-stats {
+          gap: 24px;
+          flex-wrap: wrap;
+        }
+        .thread-diagram {
+          grid-template-columns: 1fr;
+        }
+        .pipeline {
+          flex-direction: column;
+        }
+        .pipeline-step:not(:last-child)::after {
+          content: "↓";
+          right: auto;
+          top: auto;
+          bottom: -14px;
+          left: 50%;
+        }
+        .pipeline-step:first-child,
+        .pipeline-step:last-child {
+          border-radius: 10px;
+        }
+        .footer {
+          flex-direction: column;
+          gap: 12px;
+        }
+      }
+
+      .scroll-indicator {
+        position: absolute;
+        bottom: 40px;
+        left: 60px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: fadeUp 1s 0.8s ease both;
+      }
+
+      .scroll-line {
+        width: 40px;
+        height: 1px;
+        background: var(--green);
+        animation: scrollPulse 2s ease-in-out infinite;
+      }
+
+      @keyframes scrollPulse {
+        0%,
+        100% {
+          width: 40px;
+          opacity: 1;
+        }
+        50% {
+          width: 60px;
+          opacity: 0.5;
+        }
+      }
+
+      .scroll-text {
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        color: var(--text3);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-text">🐐 GoatCount System</div>
+        <div class="logo-sub">v1.0 — Technical Docs</div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Overview</div>
+        <a class="nav-link" href="#hero"
+          ><span class="nav-icon">🏠</span>Introduction</a
+        >
+        <a class="nav-link" href="#client"
+          ><span class="nav-icon">💼</span>Client Perspective</a
+        >
+        <a class="nav-link" href="#features"
+          ><span class="nav-icon">⚡</span>Core Features</a
+        >
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Architecture</div>
+        <a class="nav-link" href="#architecture"
+          ><span class="nav-icon">🏗</span>System Architecture</a
+        >
+        <a class="nav-link" href="#pipeline"
+          ><span class="nav-icon">🔄</span>Pipeline Deep-Dive</a
+        >
+        <a class="nav-link" href="#modules"
+          ><span class="nav-icon">📦</span>Module Reference</a
+        >
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Technical</div>
+        <a class="nav-link" href="#counting"
+          ><span class="nav-icon">🧮</span>Counting Algorithms</a
+        >
+        <a class="nav-link" href="#config"
+          ><span class="nav-icon">⚙️</span>Configuration</a
+        >
+        <a class="nav-link" href="#api"
+          ><span class="nav-icon">🔌</span>Slot Control API</a
+        >
+        <a class="nav-link" href="#outputs"
+          ><span class="nav-icon">📊</span>Data Outputs</a
+        >
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Setup & Support</div>
+        <a class="nav-link" href="#install"
+          ><span class="nav-icon">🚀</span>Installation</a
+        >
+        <a class="nav-link" href="#faq"><span class="nav-icon">❓</span>FAQ</a>
+        <a class="nav-link" href="#troubleshoot"
+          ><span class="nav-icon">🔧</span>Troubleshooting</a
+        >
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+      <!-- ─── HERO ─── -->
+      <div class="hero" id="hero">
+        <div class="hero-grid"></div>
+        <div class="hero-glow"></div>
+        <div class="hero-glow2"></div>
+
+        <div class="hero-content">
+          <div class="hero-badge">
+            Production System • Computer Vision • Real-Time AI
+          </div>
+
+          <h1 class="hero-title">
+            Goat<span class="accent"> Detection</span><br />
+            <span class="dim">&</span> Counting<br />
+            <span class="accent">System</span>
+          </h1>
+
+          <div class="hero-subtitle">
+            Farm-grade AI. Built for real conditions.
+          </div>
+
+          <p class="hero-desc">
+            A production-grade computer vision pipeline combining YOLO object
+            detection, ByteTrack multi-object tracking, and three intelligent
+            counting modes — engineered to handle occlusion, jitter, and the
+            chaos of real farm CCTV environments.
+          </p>
+
+          <div class="hero-tags">
+            <span class="tag green">YOLO Detection</span>
+            <span class="tag green">ByteTrack / BoT-SORT</span>
+            <span class="tag amber">RTSP / RTMP / Webcam</span>
+            <span class="tag amber">Offline Batch</span>
+            <span class="tag blue">WebRTC Live Preview</span>
+            <span class="tag blue">Slot Control API</span>
+            <span class="tag cyan">CSV Audit Trails</span>
+            <span class="tag cyan">Annotated Video</span>
+            <span class="tag">Python 3.10+</span>
+            <span class="tag">CUDA Optimized</span>
+          </div>
+
+          <div class="hero-stats">
+            <div class="stat">
+              <div class="stat-val">3</div>
+              <div class="stat-label">Counting Modes</div>
+            </div>
+            <div class="stat">
+              <div class="stat-val">4</div>
+              <div class="stat-label">Worker Threads</div>
+            </div>
+            <div class="stat">
+              <div class="stat-val">5+</div>
+              <div class="stat-label">CSV Output Types</div>
+            </div>
+            <div class="stat">
+              <div class="stat-val">2</div>
+              <div class="stat-label">Tracker Options</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scroll-indicator">
+          <div class="scroll-line"></div>
+          <span class="scroll-text">scroll to explore</span>
+        </div>
+      </div>
+
+      <!-- ─── CLIENT PERSPECTIVE ─── -->
+      <section class="section" id="client">
+        <div class="section-eyebrow">For Decision Makers</div>
+        <h2 class="section-title">Why This System<br />Matters to Your Farm</h2>
+        <p class="section-intro">
+          Built for livestock operations managing chute throughput, this system
+          replaces manual counting with an always-on, tamper-proof AI pipeline
+          that produces audit-ready records.
+        </p>
+
+        <div class="client-highlight">
+          <p>
+            Manual goat counting is error-prone, time-consuming, and impossible
+            to audit after the fact. This system automatically counts every
+            animal passing through your chute — in real time, on live camera
+            feeds — and writes an immutable CSV record you can share with
+            buyers, vets, and regulators.
+          </p>
+        </div>
+
+        <div class="value-prop">
+          <div class="vp-item">
+            <span class="vp-icon">📸</span>
+            <div class="vp-text">
+              <h4>Works with Your Existing CCTV</h4>
+              <p>
+                Connects to any RTSP/HTTP/RTMP camera stream. No hardware
+                replacement needed — plug into your existing farm network.
+              </p>
+            </div>
+          </div>
+          <div class="vp-item">
+            <span class="vp-icon">📋</span>
+            <div class="vp-text">
+              <h4>Audit-Ready CSV Records</h4>
+              <p>
+                Every crossing is logged with timestamp, track ID, direction,
+                and frame index. Full traceability from camera to spreadsheet.
+              </p>
+            </div>
+          </div>
+          <div class="vp-item">
+            <span class="vp-icon">🌐</span>
+            <div class="vp-text">
+              <h4>Remote Monitoring via Browser</h4>
+              <p>
+                WebRTC streaming lets you watch the live annotated feed from any
+                browser — no software installs for operators.
+              </p>
+            </div>
+          </div>
+          <div class="vp-item">
+            <span class="vp-icon">📦</span>
+            <div class="vp-text">
+              <h4>Vendor Slot Management</h4>
+              <p>
+                Use the Slot Control API to start/stop counting sessions per
+                vendor or batch. Each slot produces its own CSV and summary JSON
+                — perfect for marketplace environments.
+              </p>
+            </div>
+          </div>
+          <div class="vp-item">
+            <span class="vp-icon">🛡️</span>
+            <div class="vp-text">
+              <h4>Hardened Against Noise</h4>
+              <p>
+                Anti-flicker filters, motion intent analysis, and dual-line
+                confirmation make the system robust against animals hovering
+                near lines, partial occlusion, and tracking instability.
+              </p>
+            </div>
+          </div>
+          <div class="vp-item">
+            <span class="vp-icon">💾</span>
+            <div class="vp-text">
+              <h4>Offline Batch Processing</h4>
+              <p>
+                Already have recordings? Process any video file at any time.
+                Outputs annotated video plus all CSV reports.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title">💼 Business Impact</div>
+          Reduce under/over-counting disputes at point-of-sale, provide buyers
+          with camera-verified counts, and maintain clean records for livestock
+          insurance and regulatory compliance.
+        </div>
+      </section>
+
+      <!-- ─── CORE FEATURES ─── -->
+      <section class="section" id="features">
+        <div class="section-eyebrow">Core Capabilities</div>
+        <h2 class="section-title">Feature Deep-Dive</h2>
+        <p class="section-intro">
+          Every feature is engineered for production farm environments — not
+          controlled lab conditions.
+        </p>
+
+        <div class="card-grid">
+          <div class="card highlight">
+            <span class="card-icon">🧠</span>
+            <div class="card-title">Dual-Line Counting (Recommended)</div>
+            <p class="card-desc">
+              The most accurate mode. Two parallel virtual lines (A + B) work
+              together — requiring a goat to cross both in the same direction
+              within a time window before registering a count. Eliminates almost
+              all false positives from animals near the line.
+            </p>
+          </div>
+          <div class="card">
+            <span class="card-icon">📹</span>
+            <div class="card-title">RTSP / Live Stream Support</div>
+            <p class="card-desc">
+              Connect to any RTSP, RTMP, HTTP, or webcam source. The
+              multi-threaded pipeline captures, paces, infers, and displays
+              simultaneously with no dropped frames from inference lag.
+            </p>
+          </div>
+          <div class="card">
+            <span class="card-icon">🎯</span>
+            <div class="card-title">YOLO + ByteTrack / BoT-SORT</div>
+            <p class="card-desc">
+              Uses Ultralytics YOLO for frame-level detection and either
+              ByteTrack or BoT-SORT (with Re-ID) for persistent tracking across
+              frames. Custom-trained model ships with the package
+              (<code>best.pt</code>).
+            </p>
+          </div>
+          <div class="card">
+            <span class="card-icon">🔁</span>
+            <div class="card-title">Thread-Resilient Pipeline</div>
+            <p class="card-desc">
+              Capture, pacing, inference, and display run on independent threads
+              with dedicated queues. The monitor thread auto-restarts crashed
+              inference or pacing workers once — keeping the system live.
+            </p>
+          </div>
+          <div class="card">
+            <span class="card-icon">📡</span>
+            <div class="card-title">WebRTC Browser Streaming</div>
+            <p class="card-desc">
+              Watch the annotated live feed from any browser at
+              <code>http://host:8081</code>. Supports up to 2 simultaneous
+              clients, configurable resolution and FPS downscaling for bandwidth
+              control.
+            </p>
+          </div>
+          <div class="card">
+            <span class="card-icon">🗂️</span>
+            <div class="card-title">Slot Control API</div>
+            <p class="card-desc">
+              FastAPI REST endpoint to start/stop named counting sessions
+              (slots) per vendor. Each slot gets its own event CSV and a summary
+              JSON comparing declared vs. counted animals.
+            </p>
+          </div>
+          <div class="card">
+            <span class="card-icon">🎨</span>
+            <div class="card-title">Rich Visualization HUD</div>
+            <p class="card-desc">
+              Live overlay shows bounding boxes or centroids, track IDs,
+              directional arrows, count HUD, motion trails, and count-event
+              animations — all configurable via YAML.
+            </p>
+          </div>
+          <div class="card">
+            <span class="card-icon">⚡</span>
+            <div class="card-title">GPU-Accelerated Inference</div>
+            <p class="card-desc">
+              FP16 half-precision on CUDA, Conv+BN fusion, configurable image
+              size. Runs on CUDA:0 by default. Automatically disables FP16 on
+              CPU to prevent errors.
+            </p>
+          </div>
+          <div class="card">
+            <span class="card-icon">🛡️</span>
+            <div class="card-title">Anti-Flicker & Motion Gating</div>
+            <p class="card-desc">
+              Two-stage verification: geometry (line-crossing confirmation) then
+              motion intent (displacement, axis, consistency). Rejects animals
+              that are stationary, reversing, or twitching near the line.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── ARCHITECTURE ─── -->
+      <section class="section" id="architecture">
+        <div class="section-eyebrow">System Design</div>
+        <h2 class="section-title">Architecture Overview</h2>
+        <p class="section-intro">
+          The system is split into two runtime modes — single-threaded for
+          offline video processing, and multi-threaded for live RTSP streams —
+          sharing all core logic modules.
+        </p>
+
+        <h3>Directory Structure</h3>
+        <div class="arch-tree">
+          <span class="tree-dir">goats_detection/</span><br />
+          <span class="tree-branch">├── </span
+          ><span class="tree-highlight">main.py</span>
+          <span class="tree-desc"
+            ># Entrypoint — loads config, dispatches runner</span
+          ><br />
+          <span class="tree-branch">├── configs/</span><br />
+          <span class="tree-branch">│ └── </span
+          ><span class="tree-highlight">config.yaml</span>
+          <span class="tree-desc"
+            ># Unified config — all knobs in one place</span
+          ><br />
+          <span class="tree-branch">├── models/</span>
+          <span class="tree-desc"># YOLO weights (.pt files)</span><br />
+          <span class="tree-branch">├── src/</span><br />
+          <span class="tree-branch">│ ├── app/</span>
+          <span class="tree-desc"># Pipeline orchestration</span><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-file">runner.py</span>
+          <span class="tree-desc"
+            ># Source detection → dispatches live vs file</span
+          ><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-highlight">multi_threaded.py</span>
+          <span class="tree-desc"
+            ># Live RTSP: 4-thread pipeline + monitor loop</span
+          ><br />
+          <span class="tree-branch">│ │ └── </span
+          ><span class="tree-file">single_threaded.py</span>
+          <span class="tree-desc"># Offline: synchronous frame loop</span><br />
+          <span class="tree-branch">│ ├── capture/</span><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-file">stream.py</span>
+          <span class="tree-desc"
+            ># ROIStream — crops frames to ROI on the fly</span
+          ><br />
+          <span class="tree-branch">│ │ └── </span
+          ><span class="tree-highlight">worker.py</span>
+          <span class="tree-desc"
+            ># ThreadedVideoCapture — non-blocking RTSP reader</span
+          ><br />
+          <span class="tree-branch">│ ├── infer/</span><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-highlight">yolo_infer.py</span>
+          <span class="tree-desc"
+            ># track_once() wrapper, class filter, mask handling</span
+          ><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-file">loader.py</span>
+          <span class="tree-desc"># YOLO model loading + device handling</span
+          ><br />
+          <span class="tree-branch">│ │ └── </span
+          ><span class="tree-highlight">worker.py</span>
+          <span class="tree-desc"># InferenceWorker thread</span><br />
+          <span class="tree-branch">│ ├── counting/</span><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-highlight">counting_core_logic.py</span>
+          <span class="tree-desc"># Line & Dual count logic per frame</span
+          ><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-file">state.py</span>
+          <span class="tree-desc"># CountState — up/down totals, histories</span
+          ><br />
+          <span class="tree-branch">│ │ └── counting_modes/</span><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-highlight">dual_lines.py</span>
+          <span class="tree-desc"
+            ># DualLineCounter, MotionHistory, MotionIntentAnalyzer</span
+          ><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-file">zone.py</span>
+          <span class="tree-desc"># ZoneCounter — polygon-based entry/exit</span
+          ><br />
+          <span class="tree-branch">│ │ └── </span
+          ><span class="tree-file">counting_modes.py</span>
+          <span class="tree-desc"># process_frame_* entry points</span><br />
+          <span class="tree-branch">│ ├── display/</span><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-file">drawing.py</span>
+          <span class="tree-desc"># Frame composition, overlays, HUD</span
+          ><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-highlight">worker.py</span>
+          <span class="tree-desc"
+            ># DisplayWorker — draws, saves CSV, slots</span
+          ><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-file">webrtc_server.py</span>
+          <span class="tree-desc"># WebRTC push server (aiortc)</span><br />
+          <span class="tree-branch">│ │ └── </span
+          ><span class="tree-file">webrtc_page.py</span>
+          <span class="tree-desc"># Embedded HTML page served to browser</span
+          ><br />
+          <span class="tree-branch">│ ├── slots/</span><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-highlight">slot_manager.py</span>
+          <span class="tree-desc"
+            ># SlotManager — lifecycle, event routing, summaries</span
+          ><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-file">contracts.py</span>
+          <span class="tree-desc"
+            ># SlotStartPayload, SlotStopPayload, SlotSummary</span
+          ><br />
+          <span class="tree-branch">│ │ └── api/</span><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-highlight">server.py</span>
+          <span class="tree-desc"># FastAPI + uvicorn in daemon thread</span
+          ><br />
+          <span class="tree-branch">│ │ └── </span
+          ><span class="tree-file">routes.py</span>
+          <span class="tree-desc"># /api/slot/start, /stop, /active</span><br />
+          <span class="tree-branch">│ ├── geometry/</span><br />
+          <span class="tree-branch">│ │ └── </span
+          ><span class="tree-file">geom.py</span>
+          <span class="tree-desc"># ROI pixel math, line geometry helpers</span
+          ><br />
+          <span class="tree-branch">│ ├── runtime/</span><br />
+          <span class="tree-branch">│ │ └── </span
+          ><span class="tree-highlight">pacing.py</span>
+          <span class="tree-desc"
+            ># PacingController — frame timing, autoskip policy</span
+          ><br />
+          <span class="tree-branch">│ ├── runtime_configs/</span><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-highlight">config.py</span>
+          <span class="tree-desc"
+            ># load_config() — validates &amp; flattens YAML into ARGS</span
+          ><br />
+          <span class="tree-branch">│ │ └── </span
+          ><span class="tree-file">tracker_cfg.py</span>
+          <span class="tree-desc"
+            ># Generates bytetrack/botsort YAML at runtime</span
+          ><br />
+          <span class="tree-branch">│ ├── utils/</span><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-file">logger.py</span>
+          <span class="tree-desc"># Rich console + async JSONL file logger</span
+          ><br />
+          <span class="tree-branch">│ │ ├── </span
+          ><span class="tree-file">metrics.py</span>
+          <span class="tree-desc"
+            ># MetricsCollector — FPS, queue stats CSV</span
+          ><br />
+          <span class="tree-branch">│ │ └── </span
+          ><span class="tree-file">video_recorder.py</span>
+          <span class="tree-desc"># Output video writer (annotated MP4)</span
+          ><br />
+          <span class="tree-branch">│ └── viz/</span><br />
+          <span class="tree-branch">│ ├── </span
+          ><span class="tree-file">animator.py</span>
+          <span class="tree-desc"># Count-event animation (flash effect)</span
+          ><br />
+          <span class="tree-branch">│ ├── </span
+          ><span class="tree-file">colorer.py</span>
+          <span class="tree-desc"
+            ># Per-track color assignment (green → blue on count)</span
+          ><br />
+          <span class="tree-branch">│ └── </span
+          ><span class="tree-file">draw.py</span>
+          <span class="tree-desc"
+            ># OpenCV draw primitives (boxes, centroids, HUD)</span
+          ><br />
+          <span class="tree-branch">└── utils/</span><br />
+          <span class="tree-branch"> └── </span
+          ><span class="tree-file">s3_uploader.py</span>
+          <span class="tree-desc"># Optional: upload outputs to S3 bucket</span>
+        </div>
+      </section>
+
+      <!-- ─── PIPELINE ─── -->
+      <section class="section" id="pipeline">
+        <div class="section-eyebrow">Data Flow</div>
+        <h2 class="section-title">Pipeline Deep-Dive</h2>
+        <p class="section-intro">
+          Two execution paths share all counting and visualization logic. The
+          dispatcher in <code>runner.py</code> auto-detects the source type.
+        </p>
+
+        <h3>Live Pipeline (RTSP / Webcam) — Multi-Threaded</h3>
+        <p>
+          Each stage runs independently on its own thread, communicating through
+          bounded queues. This ensures capture never blocks on slow inference,
+          and display never blocks on CSV writes.
+        </p>
+
+        <div class="pipeline">
+          <div class="pipeline-step">
+            <div class="pipeline-num">01</div>
+            <span class="pipeline-icon">📡</span>
+            <div class="pipeline-label">Capture</div>
+            <div class="pipeline-sub">
+              ThreadedVideoCapture<br />FFmpeg/OpenCV
+            </div>
+          </div>
+          <div class="pipeline-step">
+            <div class="pipeline-num">02</div>
+            <span class="pipeline-icon">⏱️</span>
+            <div class="pipeline-label">Pacing</div>
+            <div class="pipeline-sub">
+              PacingController<br />sync + autoskip
+            </div>
+          </div>
+          <div class="pipeline-step">
+            <div class="pipeline-num">03</div>
+            <span class="pipeline-icon">🔍</span>
+            <div class="pipeline-label">Inference</div>
+            <div class="pipeline-sub">YOLO + ByteTrack<br />GPU FP16</div>
+          </div>
+          <div class="pipeline-step">
+            <div class="pipeline-num">04</div>
+            <span class="pipeline-icon">🧮</span>
+            <div class="pipeline-label">Counting</div>
+            <div class="pipeline-sub">Geometry + Motion<br />Analysis</div>
+          </div>
+          <div class="pipeline-step">
+            <div class="pipeline-num">05</div>
+            <span class="pipeline-icon">🎨</span>
+            <div class="pipeline-label">Display</div>
+            <div class="pipeline-sub">HUD overlay<br />CSV write</div>
+          </div>
+          <div class="pipeline-step">
+            <div class="pipeline-num">06</div>
+            <span class="pipeline-icon">📡</span>
+            <div class="pipeline-label">Stream</div>
+            <div class="pipeline-sub">WebRTC push<br />to browser</div>
+          </div>
+        </div>
+
+        <h3>Thread Architecture</h3>
+        <div class="thread-diagram">
+          <div class="thread-col">
+            <div class="thread-header">
+              <span class="thread-dot" style="background: var(--amber)"></span>
+              <span style="color: var(--amber)">Capture Thread</span>
+            </div>
+            <div class="thread-item">Opens RTSP stream</div>
+            <div class="thread-item">Reads raw frames</div>
+            <div class="thread-item">Reconnects on drop</div>
+            <div class="thread-item">Pushes cap_info metadata</div>
+            <div class="thread-queue">→ capture_queue (size: 3)</div>
+          </div>
+          <div class="thread-col">
+            <div class="thread-header">
+              <span class="thread-dot" style="background: var(--cyan)"></span>
+              <span style="color: var(--cyan)">Pacing Thread</span>
+            </div>
+            <div class="thread-item">Reads from cap_queue</div>
+            <div class="thread-item">Enforces playback speed</div>
+            <div class="thread-item">Drops oldest on lag</div>
+            <div class="thread-item">Autoskip if > max_lag_s</div>
+            <div class="thread-queue">→ pacing_out_q (size: 12)</div>
+          </div>
+          <div class="thread-col">
+            <div class="thread-header">
+              <span class="thread-dot" style="background: var(--green)"></span>
+              <span style="color: var(--green)">Inference Thread</span>
+            </div>
+            <div class="thread-item">Crops to ROI</div>
+            <div class="thread-item">Runs YOLO.track()</div>
+            <div class="thread-item">Filters by area/class</div>
+            <div class="thread-item">Outputs detection tuples</div>
+            <div class="thread-queue">→ result_queue (size: 12)</div>
+          </div>
+          <div class="thread-col">
+            <div class="thread-header">
+              <span class="thread-dot" style="background: #cc88ff"></span>
+              <span style="color: #cc88ff">Display Thread</span>
+            </div>
+            <div class="thread-item">Runs counting logic</div>
+            <div class="thread-item">Draws HUD & overlays</div>
+            <div class="thread-item">Writes CSVs + video</div>
+            <div class="thread-item">Pushes to WebRTC</div>
+            <div class="thread-queue">Manages SlotManager</div>
+          </div>
+        </div>
+
+        <div class="callout info">
+          <div class="callout-title">🔄 Auto-Recovery</div>
+          The monitor loop polls thread health every 1 second. If the inference
+          or pacing thread dies, it attempts one clean restart. If the capture
+          thread dies, it logs the crash and attempts reconnection with
+          exponential backoff.
+        </div>
+
+        <h3>Offline Pipeline — Single-Threaded</h3>
+        <p>
+          For pre-recorded video files, the system uses a synchronous loop. The
+          same counting, visualization, and CSV modules are used — only the
+          frame source and threading model differ.
+        </p>
+
+        <div class="pipeline">
+          <div class="pipeline-step">
+            <span class="pipeline-icon">🎬</span>
+            <div class="pipeline-label">Open Video</div>
+            <div class="pipeline-sub">cv2.VideoCapture</div>
+          </div>
+          <div class="pipeline-step">
+            <span class="pipeline-icon">✂️</span>
+            <div class="pipeline-label">Crop ROI</div>
+            <div class="pipeline-sub">ROIStream iterator</div>
+          </div>
+          <div class="pipeline-step">
+            <span class="pipeline-icon">🔍</span>
+            <div class="pipeline-label">Detect + Track</div>
+            <div class="pipeline-sub">track_once()</div>
+          </div>
+          <div class="pipeline-step">
+            <span class="pipeline-icon">🧮</span>
+            <div class="pipeline-label">Count</div>
+            <div class="pipeline-sub">Line / Dual / Zone</div>
+          </div>
+          <div class="pipeline-step">
+            <span class="pipeline-icon">🎨</span>
+            <div class="pipeline-label">Compose Frame</div>
+            <div class="pipeline-sub">HUD + overlays</div>
+          </div>
+          <div class="pipeline-step">
+            <span class="pipeline-icon">💾</span>
+            <div class="pipeline-label">Save</div>
+            <div class="pipeline-sub">Video + CSV</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── MODULES ─── -->
+      <section class="section" id="modules">
+        <div class="section-eyebrow">Code Reference</div>
+        <h2 class="section-title">Module Reference</h2>
+        <p class="section-intro">
+          Key classes and functions across all modules.
+        </p>
+
+        <h3>Core Classes</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Class / Function</th>
+              <th>Module</th>
+              <th>Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="td-key">DualLineCounter</span></td>
+              <td><code>counting/counting_modes/dual_lines.py</code></td>
+              <td>
+                Stateful two-line counter. Implements both
+                <code>update_verify()</code> and
+                <code>update_recover()</code> modes. Wraps MotionHistory and
+                MotionIntentAnalyzer.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="td-key">MotionIntentAnalyzer</span></td>
+              <td><code>counting/counting_modes/dual_lines.py</code></td>
+              <td>
+                READ-ONLY brain layer. Takes motion history + geometry event;
+                returns accept/reject/defer decision. Checks displacement, axis
+                alignment, and directional consistency.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="td-key">SlotManager</span></td>
+              <td><code>slots/slot_manager.py</code></td>
+              <td>
+                Manages one active slot at a time. Routes counting events into
+                the active slot. Generates SlotSummary JSON on stop. Fires
+                lifecycle callbacks to DisplayWorker.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="td-key">PacingController</span></td>
+              <td><code>runtime/pacing.py</code></td>
+              <td>
+                Sits between capture and inference queues. Enforces
+                playback_speed timing. Can drop oldest frames or skip forward
+                when lagging behind real-time.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="td-key">ThreadedVideoCapture</span></td>
+              <td><code>capture/worker.py</code></td>
+              <td>
+                Non-blocking RTSP reader. Runs in its own thread. Populates
+                cap_info (FPS, resolution, total frames). Handles reconnection
+                on drop.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="td-key">ZoneCounter</span></td>
+              <td><code>counting/counting_modes/zone.py</code></td>
+              <td>
+                Rectangle-based entry/exit counter. Handles animals born inside
+                the zone, backfill projection, and near-border acceptance
+                radius.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="td-key">track_once()</span></td>
+              <td><code>infer/yolo_infer.py</code></td>
+              <td>
+                Single-frame wrapper around <code>model.track()</code>. Returns
+                list of
+                <code>(xyxy, track_id, conf, class_id, mask)</code> tuples after
+                area-ratio and class filtering.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="td-key">load_config()</span></td>
+              <td><code>runtime_configs/config.py</code></td>
+              <td>
+                Loads and fully validates <code>config.yaml</code>. Returns
+                <code>(CONFIG dict, ARGS namespace)</code>. Handles dual profile
+                auto-merge, path resolution, and run_id generation.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="td-key">Logger</span></td>
+              <td><code>utils/logger.py</code></td>
+              <td>
+                Singleton Rich console logger + background JSONL file writer.
+                Non-blocking queue with drop-oldest policy. Prints goat ASCII
+                art banner on startup.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="td-key">WebRTCServer</span></td>
+              <td><code>display/webrtc_server.py</code></td>
+              <td>
+                aiortc-based WebRTC push server. Serves annotated frames to
+                browser clients. Accepts control events from WebRTC control
+                queue.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ─── COUNTING ALGORITHMS ─── -->
+      <section class="section" id="counting">
+        <div class="section-eyebrow">Intelligence</div>
+        <h2 class="section-title">Counting Algorithms</h2>
+        <p class="section-intro">
+          Three modes with increasing robustness. For chute monitoring,
+          <strong>Dual-Line</strong> is always recommended.
+        </p>
+
+        <div class="counting-modes">
+          <div class="mode-card">
+            <span class="mode-badge line">Mode 1</span>
+            <div class="mode-title">Single-Line Counting</div>
+            <p class="mode-desc">
+              A single virtual line in the ROI. Counts when a track's confirmed
+              side flips across the line. Uses side-history deque for
+              anti-flicker and per-ID cooldown frames to prevent double-counts.
+            </p>
+          </div>
+          <div class="mode-card">
+            <span class="mode-badge dual">Mode 2</span
+            ><span class="mode-badge recommended">★ Recommended</span>
+            <div class="mode-title">Dual-Line Counting</div>
+            <p class="mode-desc">
+              Two parallel lines (A + B). Verify mode requires A then B in the
+              same direction within a frame window. Recover mode counts at A,
+              with B catching any A misses. Then motion gating confirms the
+              crossing is real.
+            </p>
+          </div>
+          <div class="mode-card">
+            <span
+              class="mode-badge zone"
+              style="
+                background: rgba(68, 136, 255, 0.12);
+                color: var(--blue);
+                border-color: rgba(68, 136, 255, 0.3);
+              "
+              >Mode 3</span
+            >
+            <div class="mode-title">Zone Counting</div>
+            <p class="mode-desc">
+              Rectangular zone — tracks entry and exit. Useful for pens or
+              holding areas. Configurable policy for animals born inside the
+              zone (count_entry or ignore). Supports near-border
+              back-projection.
+            </p>
+          </div>
+        </div>
+
+        <h3>Dual-Line Logic — How It Actually Works</h3>
+
+        <div class="counting-visual">
+          <div class="cv-canvas">
+            <div class="cv-lineA"><span class="cv-label a">LINE A</span></div>
+            <div class="cv-lineB"><span class="cv-label b">LINE B</span></div>
+            <div class="cv-goat">🐐</div>
+            <div class="cv-direction">→ Direction: UP</div>
+          </div>
+          <p
+            style="
+              font-size: 12px;
+              color: var(--text3);
+              text-align: center;
+              margin: 0;
+            "
+          >
+            Live simulation — goat crossing Line A then Line B in the same
+            direction triggers a count event
+          </p>
+        </div>
+
+        <h4>Phase 1: Geometry (Eyes)</h4>
+        <p>
+          For every track on every frame, the system computes its cross-product
+          sign relative to Line A and Line B using the perpendicular distance
+          formula. Positions within <code>line_margin_px</code> (default 8px)
+          are discarded as ambiguous. A <code>deque</code> of recent sign values
+          is kept per track per line.
+        </p>
+
+        <p>
+          A "side flip" is only confirmed when the deque meets strict/loose
+          majority criteria: at least <code>min_nonzero_abs</code> non-zero
+          samples must agree on a direction with
+          <code>min_nonzero_ratio</code> consistency. This prevents noise from
+          triggering false flips.
+        </p>
+
+        <h4>Phase 2: Motion Gating (Brain)</h4>
+        <p>
+          After geometry confirms a crossing event, the MotionIntentAnalyzer
+          independently examines the track's position history and checks:
+        </p>
+
+        <div class="card-grid-2">
+          <div class="card">
+            <div class="card-title">📏 Displacement Check</div>
+            <p class="card-desc">
+              Total displacement (Euclidean) must exceed
+              <code>motion_min_displacement_px</code>. Rejects animals that
+              crossed by swaying in place.
+            </p>
+          </div>
+          <div class="card">
+            <div class="card-title">📐 Axis Alignment</div>
+            <p class="card-desc">
+              The dominant movement axis (X or Y) must exceed
+              <code>motion_axis_min_displacement_px</code>. Ensures motion is
+              perpendicular to the line, not parallel to it.
+            </p>
+          </div>
+          <div class="card">
+            <div class="card-title">🔄 Consistency Ratio</div>
+            <p class="card-desc">
+              Frame-to-frame directional steps along the dominant axis must be
+              consistent (same sign) at
+              <code>motion_dir_consistency_ratio</code> (e.g., 70%). Rejects
+              animals reversing mid-cross.
+            </p>
+          </div>
+          <div class="card">
+            <div class="card-title">🎯 Direction Agreement</div>
+            <p class="card-desc">
+              The motion-derived direction must agree with the geometry-derived
+              direction. If they contradict, the count is
+              <strong>rejected</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Decision Outcomes</div>
+          The analyzer returns one of three decisions:
+          <strong>accept</strong> (count is committed),
+          <strong>reject</strong> (motion contradicts geometry — discarded
+          permanently), or <strong>defer</strong> (insufficient motion history
+          yet — will re-evaluate next frame). All decisions are written to
+          <code>goat_decisions.csv</code> for auditing.
+        </div>
+
+        <h3>Auto Profiles (Slipping vs Standing View)</h3>
+        <p>
+          The system ships with two pre-tuned parameter sets for the two most
+          common camera angles on chute setups. Set
+          <code>counting.dual.profile</code> in config and all motion/geometry
+          thresholds are automatically applied:
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>standing_view</th>
+              <th>slipping_view</th>
+              <th>Effect</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-key">hyst_frames</td>
+              <td class="td-default">4</td>
+              <td class="td-default">5</td>
+              <td>Frames needed to confirm a side flip</td>
+            </tr>
+            <tr>
+              <td class="td-key">motion_min_frames</td>
+              <td class="td-default">6</td>
+              <td class="td-default">8</td>
+              <td>Min motion history before analyzing</td>
+            </tr>
+            <tr>
+              <td class="td-key">motion_min_displacement_px</td>
+              <td class="td-default">14.0</td>
+              <td class="td-default">16.0</td>
+              <td>Min pixel travel required</td>
+            </tr>
+            <tr>
+              <td class="td-key">motion_dir_consistency_ratio</td>
+              <td class="td-default">0.60</td>
+              <td class="td-default">0.60</td>
+              <td>Required directional step consistency</td>
+            </tr>
+            <tr>
+              <td class="td-key">id_lock_frames</td>
+              <td class="td-default">70</td>
+              <td class="td-default">80</td>
+              <td>Cooldown frames after a count event</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ─── CONFIG ─── -->
+      <section class="section" id="config">
+        <div class="section-eyebrow">Configuration</div>
+        <h2 class="section-title">config.yaml Reference</h2>
+        <p class="section-intro">
+          A single YAML file controls every aspect of the system. All sections
+          are validated at startup with helpful error messages.
+        </p>
+
+        <h3>Required Settings</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Type</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-key">paths.weights</td>
+              <td class="td-type">str</td>
+              <td class="td-req">REQUIRED</td>
+              <td>
+                Path to YOLO <code>.pt</code> weights file. Relative = resolved
+                under <code>models/</code>
+              </td>
+            </tr>
+            <tr>
+              <td class="td-key">paths.source</td>
+              <td class="td-type">str</td>
+              <td class="td-req">REQUIRED</td>
+              <td>
+                Video file path or RTSP URL (e.g.
+                <code>rtsp://192.168.1.100:8554/stream</code>)
+              </td>
+            </tr>
+            <tr>
+              <td class="td-key">counting.line_roi</td>
+              <td class="td-type">str</td>
+              <td class="td-req">REQUIRED (line mode)</td>
+              <td>
+                ROI-relative line coordinates: <code>"ax,ay,bx,by"</code> in
+                0..1 ratios
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Full Configuration Example</h3>
+        <pre><span class="comment"># configs/config.yaml</span>
+
+<span class="key">geometry</span>:
+  <span class="key">roi</span>:
+    <span class="key">xr</span>: <span class="num">0.0000</span>    <span class="comment"># left edge (fraction of frame width)</span>
+    <span class="key">yr</span>: <span class="num">0.1514</span>    <span class="comment"># top edge (fraction of frame height)</span>
+    <span class="key">wr</span>: <span class="num">1.0000</span>    <span class="comment"># width fraction</span>
+    <span class="key">hr</span>: <span class="num">0.8472</span>    <span class="comment"># height fraction</span>
+
+<span class="key">runtime</span>:
+  <span class="key">live</span>: <span class="kw">true</span>
+  <span class="key">slots_enabled</span>: <span class="kw">true</span>
+  <span class="key">slot_api</span>:
+    <span class="key">host</span>: <span class="str">"127.0.0.1"</span>
+    <span class="key">port</span>: <span class="num">8090</span>
+  <span class="key">sync</span>: <span class="kw">true</span>
+  <span class="key">playback_speed</span>: <span class="num">1.0</span>
+  <span class="key">autoskip</span>: <span class="kw">false</span>
+  <span class="key">max_lag_s</span>: <span class="num">0.75</span>
+
+<span class="key">paths</span>:
+  <span class="key">weights</span>: <span class="str">goat_yolo11n_img1024_bs16_lr0.0033_sgd_best.pt</span>
+  <span class="key">source</span>: <span class="str">rtsp://127.0.0.1:8554/mystream</span>
+
+<span class="key">inference</span>:
+  <span class="key">device</span>: <span class="str">"0"</span>       <span class="comment"># "cpu" | "0" (cuda:0) | "auto"</span>
+  <span class="key">half</span>: <span class="kw">true</span>       <span class="comment"># FP16 (CUDA only)</span>
+  <span class="key">fuse</span>: <span class="kw">true</span>       <span class="comment"># Conv+BN fusion</span>
+  <span class="key">imgsz</span>: <span class="num">1024</span>
+  <span class="key">conf</span>: <span class="num">0.25</span>
+  <span class="key">iou</span>: <span class="num">0.45</span>
+
+<span class="key">tracking</span>:
+  <span class="key">tracker</span>: <span class="str">bytetrack</span>   <span class="comment"># bytetrack | botsort</span>
+
+<span class="key">counting</span>:
+  <span class="key">mode</span>: <span class="str">line</span>
+  <span class="key">line_roi</span>: <span class="str">"0.1875, 0.1754, 0.1875, 0.8984"</span>
+  <span class="key">dual</span>:
+    <span class="key">enabled</span>: <span class="kw">true</span>
+    <span class="key">mode</span>: <span class="str">recover</span>
+    <span class="key">profile</span>: <span class="str">slipping_view</span>
+    <span class="key">offset_px</span>: <span class="num">150</span>
+    <span class="key">window_frames</span>: <span class="num">40</span>
+    <span class="key">id_lock_frames</span>: <span class="num">80</span>
+
+<span class="key">webrtc</span>:
+  <span class="key">enable</span>: <span class="kw">true</span>
+  <span class="key">host</span>: <span class="str">"0.0.0.0"</span>
+  <span class="key">port</span>: <span class="num">8081</span>
+
+<span class="key">output_video</span>:
+  <span class="key">enable</span>: <span class="kw">true</span>
+  <span class="key">filename</span>: <span class="str">output.mp4</span>
+  <span class="key">fps</span>: <span class="num">25</span></pre>
+      </section>
+
+      <!-- ─── API ─── -->
+      <section class="section" id="api">
+        <div class="section-eyebrow">REST Interface</div>
+        <h2 class="section-title">Slot Control API</h2>
+        <p class="section-intro">
+          A FastAPI server (port 8090 by default) enables external systems —
+          farm management software, POS systems, mobile apps — to control
+          counting sessions per vendor or batch.
+        </p>
+
+        <div class="callout info">
+          <div class="callout-title">📚 Interactive Docs</div>
+          When the API is running, visit
+          <code>http://127.0.0.1:8090/docs</code> for interactive Swagger
+          documentation auto-generated by FastAPI.
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method post">POST</span>
+            <span class="endpoint-path">/api/slot/start</span>
+            <span class="endpoint-desc">Start a counting session</span>
+          </div>
+          <div class="endpoint-body">
+            <p style="font-size: 13px; margin-bottom: 12px">
+              Starts a new slot. Idempotent if the same <code>slot_id</code> is
+              already active (returns 200). Rejects with 409 if a different slot
+              is active.
+            </p>
+            <pre style="font-size: 12px; padding: 16px">{
+  <span class="key">"slot_id"</span>: <span class="str">"vendor_ahmed_batch_01"</span>,
+  <span class="key">"vendor_id"</span>: <span class="str">"V-001"</span>,
+  <span class="key">"vendor_name"</span>: <span class="str">"Ahmed Livestock"</span>,
+  <span class="key">"declared_count"</span>: <span class="num">50</span>,
+  <span class="key">"started_by"</span>: <span class="str">"operator_1"</span>
+}</pre>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method post">POST</span>
+            <span class="endpoint-path">/api/slot/stop</span>
+            <span class="endpoint-desc"
+              >Stop active session & generate summary</span
+            >
+          </div>
+          <div class="endpoint-body">
+            <p style="font-size: 13px; margin-bottom: 12px">
+              Stops the active slot, finalizes the CSV, and generates a
+              <code>slot_summary.json</code> comparing
+              <code>declared_count</code> vs <code>counted_count</code>. Status
+              will be <strong>OK</strong>, <strong>MISMATCH</strong>, or
+              <strong>ABORTED</strong>.
+            </p>
+            <pre style="font-size: 12px; padding: 16px">{
+  <span class="key">"slot_id"</span>: <span class="str">"vendor_ahmed_batch_01"</span>,
+  <span class="key">"stopped_by"</span>: <span class="str">"operator_1"</span>,
+  <span class="key">"reason"</span>: <span class="str">"batch complete"</span>
+}</pre>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/api/slot/active</span>
+            <span class="endpoint-desc">Current slot state</span>
+          </div>
+          <div class="endpoint-body">
+            <p style="font-size: 13px; margin-bottom: 12px">
+              Returns real-time slot state — live count, direction breakdown,
+              elapsed time. Safe to poll at any interval.
+            </p>
+            <pre style="font-size: 12px; padding: 16px">{
+  <span class="key">"active"</span>: <span class="kw">true</span>,
+  <span class="key">"slot"</span>: {
+    <span class="key">"slot_id"</span>: <span class="str">"vendor_ahmed_batch_01"</span>,
+    <span class="key">"slot_count"</span>: <span class="num">23</span>,
+    <span class="key">"direction_breakdown"</span>: { <span class="key">"up"</span>: <span class="num">20</span>, <span class="key">"down"</span>: <span class="num">3</span> },
+    <span class="key">"declared_count"</span>: <span class="num">50</span>,
+    <span class="key">"status"</span>: <span class="str">"ACTIVE"</span>
+  }
+}</pre>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/health</span>
+            <span class="endpoint-desc">Health check</span>
+          </div>
+          <div class="endpoint-body">
+            <p style="font-size: 13px">
+              Returns <code>{"status": "healthy", "service": "slot-api"}</code>.
+              Use for load-balancer health checks or monitoring dashboards.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── OUTPUTS ─── -->
+      <section class="section" id="outputs">
+        <div class="section-eyebrow">Data Artifacts</div>
+        <h2 class="section-title">Output Files</h2>
+        <p class="section-intro">
+          Every run generates a complete audit package under
+          <code>outputs/runs/&lt;run_id&gt;/</code>. All outputs are timestamped
+          and organized per run.
+        </p>
+
+        <div class="output-grid">
+          <div class="output-card">
+            <div class="output-card-header">
+              <span class="output-icon">📋</span>
+              <span class="output-title">Events CSV</span>
+              <span class="badge badge-green">Primary Audit</span>
+            </div>
+            <div class="output-file">events/goat_cross_events.csv</div>
+            <p class="output-desc">
+              One row per counted crossing. Columns: <code>timestamp_s</code>,
+              <code>src_frame_idx</code>, <code>proc_frame_idx</code>,
+              <code>track_id</code>, <code>direction</code>, <code>cx</code>,
+              <code>cy</code>. Append-only. Written atomically — duplicate track
+              IDs are blocked at the CSV layer.
+            </p>
+          </div>
+          <div class="output-card">
+            <div class="output-card-header">
+              <span class="output-icon">📈</span>
+              <span class="output-title">Timeseries CSV</span>
+              <span class="badge badge-blue">Analytics</span>
+            </div>
+            <div class="output-file">timeseries/goat_counts_timeseries.csv</div>
+            <p class="output-desc">
+              Per-second cumulative counts. Columns: <code>time_s</code>,
+              <code>up_count</code>, <code>down_count</code>. One row per second
+              of video processed. Useful for throughput graphs and time-of-day
+              analysis.
+            </p>
+          </div>
+          <div class="output-card">
+            <div class="output-card-header">
+              <span class="output-icon">🧪</span>
+              <span class="output-title">Decisions CSV</span>
+              <span class="badge badge-amber">Debug</span>
+            </div>
+            <div class="output-file">decisions/goat_decisions.csv</div>
+            <p class="output-desc">
+              Motion gating decisions. Columns: <code>ts_s</code>,
+              <code>tid</code>, <code>geometry_direction</code>,
+              <code>decision</code>, <code>reason</code>,
+              <code>confidence</code>, <code>dx</code>, <code>dy</code>,
+              <code>dominant_axis</code>. Written for every geometry event —
+              even rejected ones. Invaluable for tuning.
+            </p>
+          </div>
+          <div class="output-card">
+            <div class="output-card-header">
+              <span class="output-icon">⚡</span>
+              <span class="output-title">Metrics CSV</span>
+              <span class="badge badge-cyan">Performance</span>
+            </div>
+            <div class="output-file">metrics/goat_metrics.csv</div>
+            <p class="output-desc">
+              Thread-level performance metrics: FPS per stage, queue fill rates,
+              inference latency. Used to diagnose pipeline bottlenecks and
+              validate pacing configuration.
+            </p>
+          </div>
+          <div class="output-card">
+            <div class="output-card-header">
+              <span class="output-icon">🎬</span>
+              <span class="output-title">Annotated Video</span>
+              <span class="badge badge-green">Visual Proof</span>
+            </div>
+            <div class="output-file">video/output.mp4</div>
+            <p class="output-desc">
+              Full-frame MP4 with all overlays: bounding boxes, track IDs,
+              motion trails, line overlays, count HUD, and flash animations on
+              each count event. Visual verification of every count.
+            </p>
+          </div>
+          <div class="output-card">
+            <div class="output-card-header">
+              <span class="output-icon">📦</span>
+              <span class="output-title">Slot Summary JSON</span>
+              <span class="badge badge-amber">Vendor Record</span>
+            </div>
+            <div class="output-file">
+              slots/SLOT_&lt;id&gt;__&lt;ts&gt;/slot_summary.json
+            </div>
+            <p class="output-desc">
+              Per-slot JSON generated on stop. Contains:
+              <code>declared_count</code>, <code>counted_count</code>,
+              <code>difference</code>, <code>slot_status</code> (OK / MISMATCH /
+              ABORTED), <code>direction_breakdown</code>,
+              <code>slot_start_time</code>, <code>slot_end_time</code>.
+              Immutable once written.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── INSTALLATION ─── -->
+      <section class="section" id="install">
+        <div class="section-eyebrow">Getting Started</div>
+        <h2 class="section-title">Installation Guide</h2>
+        <p class="section-intro">
+          Get the system running in under 10 minutes on a CUDA-capable machine.
+        </p>
+
+        <h3>Prerequisites</h3>
+        <div class="card-grid-3">
+          <div class="card">
+            <div class="card-title">🐍 Python 3.10+</div>
+            <p class="card-desc">
+              Required. Tested on 3.10 and 3.11. Virtual environment strongly
+              recommended.
+            </p>
+          </div>
+          <div class="card">
+            <div class="card-title">🎞 FFmpeg</div>
+            <p class="card-desc">
+              Must be installed and available in system PATH. Required for RTSP
+              capture. <code>ffmpeg -version</code> should work before install.
+            </p>
+          </div>
+          <div class="card">
+            <div class="card-title">🖥 CUDA 11.8+</div>
+            <p class="card-desc">
+              Optional but strongly recommended for real-time inference. CPU
+              mode supported but significantly slower. NVIDIA GPU required for
+              CUDA.
+            </p>
+          </div>
+        </div>
+
+        <h3>Step-by-Step Setup</h3>
+
+        <h4>1 — Create & Activate Virtual Environment</h4>
+        <pre><span class="comment"># Create</span>
+<span class="kw">python</span> -m venv .venv
+
+<span class="comment"># Activate (Windows PowerShell)</span>
+.venv\Scripts\Activate.ps1
+
+<span class="comment"># Activate (Linux / macOS)</span>
+<span class="kw">source</span> .venv/bin/activate</pre>
+
+        <h4>2 — Install Project (Editable Mode)</h4>
+        <pre><span class="kw">python</span> -m pip install -e . -v</pre>
+
+        <h4>3 — Run Enhanced Installer (Recommended)</h4>
+        <p>
+          This auto-detects your PyTorch/CUDA setup, installs
+          <code>cuda-python</code> and <code>nvidia-ml-py</code> if appropriate,
+          and verifies the full dependency tree:
+        </p>
+        <pre>setup-installer \
+  --install-cuda-python \
+  --install-nvidia-ml \
+  --auto-detect-torch \
+  --always-progress \
+  --verbose \
+  --run-after <span class="str">python main.py</span></pre>
+
+        <h4>4 — Configure & Run</h4>
+        <pre><span class="comment"># Edit configs/config.yaml with your camera URL and model path</span>
+<span class="comment"># Then run:</span>
+<span class="kw">python</span> main.py</pre>
+
+        <div class="callout">
+          <div class="callout-title">✅ Verify It's Working</div>
+          On startup you should see the ASCII goat banner in the terminal,
+          followed by config loading messages. If using WebRTC, navigate to
+          <code>http://localhost:8081</code> to see the live annotated stream.
+        </div>
+      </section>
+
+      <!-- ─── FAQ ─── -->
+      <section class="section" id="faq">
+        <div class="section-eyebrow">Common Questions</div>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-intro">
+          Answers to the most common technical and operational questions.
+        </p>
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-question">
+            Why am I getting wrong direction counts (up vs down reversed)?
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Direction is determined by the side of the line a track is on
+              before and after crossing. If up and down are reversed, your
+              camera orientation doesn't match the configured profile. Try
+              switching <code>counting.dual.profile</code> between
+              <code>standing_view</code> and <code>slipping_view</code>. If
+              neither works, manually adjust the line coordinates in
+              <code>counting.line_roi</code> — swapping the line endpoints
+              (ax,ay ↔ bx,by) inverts the direction convention.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-question">
+            Counts are lower than expected — animals being missed. What do I do?
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Check the <code>decisions/goat_decisions.csv</code> file first. If
+              you see many "reject" entries with reasons like "motion too small"
+              or "axis displacement too small," lower the motion thresholds:
+              <code>motion_min_displacement_px</code> (try 10–12),
+              <code>motion_axis_min_displacement_px</code> (try 8), and reduce
+              <code>motion_dir_consistency_ratio</code> (try 0.55). If the YOLO
+              detector itself is missing animals, lower
+              <code>inference.conf</code> (try 0.15–0.20) and increase
+              <code>inference.imgsz</code> if animals are small in frame.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-question">
+            The system is counting too many false positives. How do I reduce
+            them?
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Increase the motion hardening parameters: raise
+              <code>motion_min_displacement_px</code> (try 18–20), increase
+              <code>motion_dir_consistency_ratio</code> (try 0.75–0.80), and
+              increase <code>hyst_frames</code> (try 6–8). Also check that
+              <code>min_age</code> (default 60 frames) is large enough — this
+              prevents very new tracks from counting. If using single-line mode,
+              switch to dual-line mode which has significantly lower
+              false-positive rates.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-question">
+            The RTSP stream keeps disconnecting or stuttering. What should I
+            try?
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Enable <code>runtime.autoskip: true</code> and reduce
+              <code>runtime.max_lag_s</code> to 0.5 so the system drops old
+              frames quickly when it falls behind. Check that your RTSP URL is
+              correct and the camera is accessible from the machine running the
+              software. If using WiFi, wired Ethernet significantly improves
+              stability. The system's capture thread automatically attempts
+              reconnection on drop — check the log for "CAPTURE — reconnecting"
+              messages.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-question">
+            Can I process multiple camera feeds simultaneously?
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              The current architecture supports one source per process. To
+              process multiple cameras, run multiple instances of
+              <code>python main.py</code> with different
+              <code>config.yaml</code> files pointing to different RTSP sources,
+              different Slot API ports (8090, 8091, etc.), and different output
+              directories. Each instance is independent and fully
+              self-contained.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-question">
+            How does the Slot API handle network failures or missed stop calls?
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              If the process is terminated while a slot is active (power cut,
+              Ctrl+C, crash), the shutdown handler automatically calls
+              <code>abort_active_slot_if_any()</code>. This finalizes the CSV
+              and generates a slot summary with status <code>ABORTED</code>. The
+              slot directory remains on disk with all events recorded up to the
+              point of failure. No data is lost. Duplicate start/stop calls are
+              idempotent — the API returns 200 and logs a warning rather than
+              throwing an error.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-question">
+            What is the difference between Verify mode and Recover mode in
+            dual-line counting?
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              <strong>Verify mode</strong>: A count is only committed when a
+              track crosses Line A <em>and then</em> Line B in the same
+              direction within the frame window. More conservative — you'll
+              never count an animal that didn't definitively cross both lines.
+              Better for slow-moving animals with clean crossing
+              trajectories.<br /><br />
+              <strong>Recover mode</strong>: The system counts on Line A
+              crossing immediately. Line B then acts as a recovery mechanism —
+              if an animal somehow missed Line A (tracking gap, occlusion), it
+              can still be counted when it crosses Line B. Better for
+              fast-moving animals or environments with frequent occlusion. This
+              is the default and recommended mode.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-question">
+            How do I set the ROI and line positions for my specific camera?
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              All coordinates are normalized (0.0 to 1.0 ratios). For the ROI:
+              <code>xr</code> and <code>yr</code> define the top-left corner,
+              <code>wr</code> and <code>hr</code> define width and height — all
+              as fractions of the full frame. For example,
+              <code>yr: 0.15, hr: 0.85</code> crops the top 15% of the frame.<br /><br />
+              For the counting line: <code>"ax,ay,bx,by"</code> where each value
+              is relative to the ROI (not the full frame). A vertical line at
+              18% across the ROI spanning full height would be
+              <code>"0.1875, 0.0, 0.1875, 1.0"</code>. Take a screenshot from
+              your camera and measure in a tool like Paint or GIMP to find the
+              right ratios.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── TROUBLESHOOT ─── -->
+      <section class="section" id="troubleshoot">
+        <div class="section-eyebrow">Diagnostics</div>
+        <h2 class="section-title">Troubleshooting Guide</h2>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Symptom</th>
+              <th>Likely Cause</th>
+              <th>Fix</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Wrong direction counts</td>
+              <td>Profile mismatch or line orientation</td>
+              <td>
+                Switch <code>counting.dual.profile</code> or swap line endpoints
+              </td>
+            </tr>
+            <tr>
+              <td>Counts are too low</td>
+              <td>Motion thresholds too strict</td>
+              <td>
+                Lower <code>motion_min_displacement_px</code>, reduce
+                consistency ratio
+              </td>
+            </tr>
+            <tr>
+              <td>Too many false counts</td>
+              <td>Animals hovering near line</td>
+              <td>
+                Raise <code>motion_min_displacement_px</code>, increase
+                <code>hyst_frames</code>
+              </td>
+            </tr>
+            <tr>
+              <td>RTSP stutters / drops</td>
+              <td>Network lag > max_lag_s</td>
+              <td>
+                Enable <code>autoskip: true</code>, reduce
+                <code>max_lag_s</code> to 0.5
+              </td>
+            </tr>
+            <tr>
+              <td>WebRTC not loading</td>
+              <td>Port blocked or not enabled</td>
+              <td>
+                Check <code>webrtc.enable: true</code>, confirm port 8081 is
+                open
+              </td>
+            </tr>
+            <tr>
+              <td>FileNotFoundError at startup</td>
+              <td>config.yaml or weights not found</td>
+              <td>
+                Verify <code>paths.weights</code> points to existing
+                <code>.pt</code> file
+              </td>
+            </tr>
+            <tr>
+              <td>No GPU acceleration</td>
+              <td>CUDA not found or wrong device</td>
+              <td>
+                Set <code>inference.device: "0"</code>, verify with
+                <code>nvidia-smi</code>
+              </td>
+            </tr>
+            <tr>
+              <td>Slot API not starting</td>
+              <td>Port already in use</td>
+              <td>
+                Change <code>runtime.slot_api.port</code> to an unused port
+              </td>
+            </tr>
+            <tr>
+              <td>CSV files not being written</td>
+              <td>Output directory not writable</td>
+              <td>Check permissions on <code>outputs/</code> directory</td>
+            </tr>
+            <tr>
+              <td>Inference thread dying repeatedly</td>
+              <td>GPU OOM or corrupt frame</td>
+              <td>
+                Reduce <code>inference.imgsz</code> (try 640), check GPU memory
+                with <code>nvidia-smi</code>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout info">
+          <div class="callout-title">🔍 Log Analysis</div>
+          All events are logged to <code>logs/log.jsonl</code> in structured
+          JSON format. Each line includes <code>timestamp</code>,
+          <code>level</code>, <code>tag</code>, and <code>message</code>. Filter
+          by tag (e.g., <code>grep "DUAL-MOTION-REJECT" log.jsonl</code>) to
+          diagnose specific pipeline stages. The decisions CSV is especially
+          useful for tuning — it records every geometry event with its motion
+          gating outcome.
+        </div>
+      </section>
+
+      <!-- ─── FOOTER ─── -->
+      <footer class="footer">
+        <div>
+          <div class="footer-brand">🐐 Goat Detection & Counting System</div>
+          <div style="font-size: 12px; color: var(--text3); margin-top: 4px">
+            Production-grade computer vision for livestock operations
+          </div>
+        </div>
+        <div class="footer-credit">
+          Engineering & Integration by Ubada Ghavte<br />
+          YOLO · ByteTrack · aiortc · FastAPI · Rich
+        </div>
+      </footer>
+    </main>
+
+    <script>
+      // Active nav link on scroll
+      const sections = document.querySelectorAll("section[id], div[id]");
+      const navLinks = document.querySelectorAll(".nav-link");
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              navLinks.forEach((link) => link.classList.remove("active"));
+              const active = document.querySelector(
+                `.nav-link[href="#${entry.target.id}"]`,
+              );
+              if (active) active.classList.add("active");
+            }
+          });
+        },
+        { threshold: 0.3 },
+      );
+
+      sections.forEach((s) => observer.observe(s));
+
+      // Animate numbers on scroll
+      const statVals = document.querySelectorAll(".stat-val");
+      const numObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const el = entry.target;
+              const target = parseInt(el.textContent);
+              if (!isNaN(target) && target < 100) {
+                let current = 0;
+                const interval = setInterval(() => {
+                  current++;
+                  el.textContent =
+                    current + (el.textContent.includes("+") ? "+" : "");
+                  if (current >= target) clearInterval(interval);
+                }, 80);
+              }
+              numObserver.unobserve(el);
+            }
+          });
+        },
+        { threshold: 1 },
+      );
+
+      statVals.forEach((el) => numObserver.observe(el));
+    </script>
+  </body>
+</html>
